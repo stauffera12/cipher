@@ -2,7 +2,7 @@ const multer = require("multer");
 const fs = require("fs");
 const util = require("util");
 const unlinkFile = util.promisify(fs.unlink);
-const Post = require("../models/posts");
+const Post = require("../models/Posts");
 const User = require("../models/User");
 //s3 related code for images
 const { uploadFile, getFileStream } = require('../s3')

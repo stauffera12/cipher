@@ -2,11 +2,27 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require('body-parser');
 const cors = require("cors");
-const mongoose = require('mongoose'); // Add this import
+const mongoose = require('mongoose');
+const helmet = require('helmet'); // Security middleware
+const rateLimit = require('express-rate-limit'); // Rate limiting
 const connectDB = require("./config/dbConn");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+// Security middleware
+app.use(helmet()); // Adds various HTTP headers for security
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  standardHeaders: true,
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+
+// Apply rate limiting to all requests
+app.use(limiter);
 
 // Connection check middleware
 const checkConnection = async (req, res, next) => {
@@ -22,23 +38,20 @@ const checkConnection = async (req, res, next) => {
 
 // Middleware setup
 app.use(bodyParser.json({ type: 'application/json; charset=utf-8' }));
-app.use(cors({ origin: "*" }));
-app.use(express.json());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "*", // In production, set to your specific domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-// UTF-8 Header Middleware
-app.use((req, res, next) => {
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  next();
-});
-
-
+app.use(express.json({ limit: '1mb' })); // Limit payload size
 app.use(checkConnection);
 
 // Route definitions
 const routes = {
   '/users': './routes/userRoutes',
   '/posts': './routes/postRoutes',
-  '/auth': './routes/authenticationRoutes',
+  '/auth': './routes/authenticationRoutes', // New authentication routes
   '/stripe': './routes/stripeRoutes',
 };
 
@@ -52,7 +65,16 @@ Object.entries(routes).forEach(([path, routePath]) => {
   }
 });
 
-//imageRoutes(app);
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Resource not found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Server error', error: err.message });
+});
 
 // Graceful shutdown handling
 const gracefulShutdown = async () => {

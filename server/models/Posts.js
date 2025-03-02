@@ -1,175 +1,55 @@
 const mongoose = require('mongoose');
-const User = require('./User');
 
 const postSchema = new mongoose.Schema({
-  user: {
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  content: {
     type: String,
     required: true
   },
-  profileImage: {
-    type: String
-  },
-  text: {
-    type: String
-  },
-  postimage: {
-      type: String
-  },
-  postImages: [{
-    type: String
-}],
-  slug: {
-    type: String,
-    required: true
-  },
-  likes: {
-    type: Number,
-    default: 0
-  },
-  likesUsers: [{
-    type: String
+  media: [{
+    type: String,  // URLs to images, videos, etc.
   }],
-  shares: {
-    type: Number,
-    default: 0
-  },
-  shareUsers: [{
-    type: String
-  }],
-  highestrank: {
-    type: Number
-  },
-  point:{
-    type: Number
-  },
-  currentrank: {
-    type: Number
-  },
-  stars: {
-    type: Number,
-    default: 0
-  },
-  starDonator: [{
-    type: String
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }],
   comments: [{
-    user: {
-      displayName: {
-        type: String,
-      },
-      profimage: {
-        type: String
-      },
-      userId: {
-        type: String,
-      }
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     },
-    content: {
-      type: String,
-    },
-    stars: {
-      type: Number,
-      default: 0
-    },
-    commentStarDonator: [{
-      type: String
-    }],
-    commentRank: {
-      type: Number,
-      default: 0
-    },
-    voteUpUsers: [{
-      type: String
-    }],
-    voteDownUsers: [{
-      type: String
-    }],
-    created_at: {
-    type: Date,
-    default: Date.now
-    },
-    replies: [{
-      user: {
-        displayName: {
-          type: String,
-        },
-        profimage: {
-          type: String
-        },
-        userId: {
-          type: String,
-        }
-      },
-      content: {
-        type: String,
-      },
-      stars: {
-        type: Number,
-        default: 0
-      },
-      commentStarDonator: [{
-        type: String
-      }],
-      commentRank: {
-        type: Number,
-        default: 0
-      },
-      voteUpUsers: [{
-        type: String
-      }],
-      voteDownUsers: [{
-        type: String
-      }],
-      created_at: {
+    content: String,
+    createdAt: {
       type: Date,
       default: Date.now
-      },
-    }]
-  }],
-  collaborator: [{}],
-  tags: [{
-    id: {
-      type: String,
-    },
-    tag: {
-      type: String,
     }
   }],
-  NSFW: {
-    type: Boolean,
-    default: false
-  },
-  Remix: {
-    type: Boolean,
-    default: false
-  },
-  Repost: {
-    type: Boolean,
-    default: false,
-  },
-  Paywall: {
-    type: Number
-  },
+  tags: [String],
   visibility: {
     type: String,
-    default: "all"
-  },
-  share: {
-    type: Boolean,
-    default: false
-  },
-  PostTime: {
-    type: Date,
-    default: Date.now
+    enum: ['public', 'connections', 'private'],
+    default: 'public'
   },
   createdAt: {
     type: Date,
     default: Date.now
   },
-  category: {
-    type: String,
-    default: "World News"
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
+});
+
+// Update the updatedAt timestamp on modifications
+postSchema.pre('save', function(next) {
+  if (this.isModified() && !this.isNew) {
+    this.updatedAt = Date.now();
+  }
+  next();
 });
 
 module.exports = mongoose.model('Post', postSchema);

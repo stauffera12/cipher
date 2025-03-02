@@ -1,13 +1,17 @@
 const express = require('express')
 const router = express.Router()
 const authenticationController = require('../controllers/authenticationController')
-const User = require('../models/User')
+const authMiddleware = require('../utils/middleware/authMiddleware');
 
-router.route('/signup')
-    .post()
+router.route('/register')
+    .post(authenticationController.registerUser)
 
 router.route('/login')
-    .post()
+    .post(authenticationController.loginUser)
+
+// Protected routes
+router.route('/me')
+    .get(authMiddleware.authenticateToken, authenticationController.getCurrentUser);
 
 router.route('/delete')
     .delete()

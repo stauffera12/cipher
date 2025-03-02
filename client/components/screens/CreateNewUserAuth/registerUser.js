@@ -7,6 +7,7 @@ import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../../app/store/actions/authActions';
 import { Video } from 'expo-av';
 import IridescentButton from '../../ui/Button/iridescentButton';
+import CustomAlert from '../../ui/Alert/registerAlerts';
 
 const RegisterUser = ({ navigation }) => {
     const [passcode, setPasscode] = useState("");
@@ -14,6 +15,8 @@ const RegisterUser = ({ navigation }) => {
     const [isAccepted, setIsAccepted] = useState(false);
     const [username, setUsername] = useState("");
     const [showEnterButton, setShowEnterButton] = useState(false);
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
     const dispatch = useDispatch();
     const videoRef = useRef(null);
 
@@ -31,12 +34,6 @@ const RegisterUser = ({ navigation }) => {
         };
       }, []);
 
-    useEffect(() => {
-        if (passcode === correctPasscode) {
-            setIsPasscodeCorrect(true);
-        }
-    }, [passcode]);
-
     const handleUsernameChange = (text) => {
         setUsername(text);
         setShowEnterButton(text.trim().length > 0);
@@ -48,7 +45,7 @@ const RegisterUser = ({ navigation }) => {
                 promptMessage: "Authenticate to enter",
                 fallbackLabel: "Use passcode",
                 cancelLabel: "Cancel",
-                disableDeviceFallback: true,
+                disableDeviceFallback: false,
             });
 
             if (biometricAuth.success) {
@@ -64,6 +61,17 @@ const RegisterUser = ({ navigation }) => {
         const user = { id: '1', name: username };
         AsyncStorage.setItem('userRegistered', 'true');
         dispatch(loginSuccess(user));
+    };
+
+    const handleUnlockAccess = () => {
+        if (passcode === correctPasscode) {
+            setIsPasscodeCorrect(true);
+            setAlertMessage("Welcome to the Cipher");
+            setShowAlert(true);
+        } else {
+            setAlertMessage("Incorrect passcode. Please try again.");
+            setShowAlert(true);
+        }
     };
 
     return (
@@ -87,6 +95,7 @@ const RegisterUser = ({ navigation }) => {
 
                 {isAccepted && !isPasscodeCorrect && (
                     <View style={styles.inputContainer}>
+                        <Text style={styles.header}>You've been granted a rare opportunity. Will you take it?</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Enter Passcode"
@@ -95,20 +104,17 @@ const RegisterUser = ({ navigation }) => {
                             onChangeText={setPasscode}
                             secureTextEntry
                         />
-                        <TouchableOpacity
-                            onPress={() => {
-                                // Replace this with your passcode validation logic
-                                if (passcode === 'your_passcode') {
-                                    setIsPasscodeCorrect(true);
-                                }
-                            }}
-                        >
-                        </TouchableOpacity>
+                        <IridescentButton 
+                            title="Unlock Access" 
+                            colors={['#0b1f5e', '#2541b2', '#3a6bff', '#7678ed', '#b196ef', '#daa520', '#e0cfb1']}
+                            onPress={handleUnlockAccess}
+                        />
                     </View>
                 )}
 
                 {isPasscodeCorrect && (
                     <View style={styles.inputContainer}>
+                        <Text style={styles.header}>Who you are is up to you.</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Alias"
@@ -118,12 +124,22 @@ const RegisterUser = ({ navigation }) => {
                         />
                         {username.length > 0 && (
                             <TouchableOpacity onPress={handleBiometricAuth}>
-                                <Text style={styles.button}>Enter the Cipher</Text>
+                                <IridescentButton 
+                                    title="Enter the Cipher" 
+                                    colors={['#0b1f5e', '#2541b2', '#3a6bff', '#7678ed', '#b196ef', '#daa520', '#e0cfb1']}
+                                    onPress={handleBiometricAuth}
+                                />
                             </TouchableOpacity>
                         )}
                     </View>
                 )}
             </SafeAreaView>
+            {/* Custom Alert Component */}
+            <CustomAlert 
+                    visible={showAlert} 
+                    message={alertMessage} 
+                    onClose={() => setShowAlert(false)} 
+                />
         </View>
     );
 };
@@ -151,6 +167,9 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         alignItems: 'center',
+        backgroundColor: 'rgba(21, 32, 86, 0.8)',
+        padding: 25,
+        borderRadius: 20,
     },
     label: {
         fontSize: 18,
@@ -193,23 +212,20 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 22
     },
-    button1: {
-        backgroundColor: 'black',
-        padding: 10,
-        borderRadius: 6,
-        width: 175,
-        alignItems: 'center',  // Center text inside
-        justifyContent: 'center',
-        color: 'white',
-        textAlign: 'center',
-        fontSize: 22
-    },
     buttonText: {
         color: 'white',
         textAlign: 'center',
         fontWeight: '600',
         fontSize: 18,
     },
+    header: {
+        fontSize: 18,
+        fontWeight: '800',
+        fontStyle: "italic",
+        color: '#E0CFB1',
+        marginBottom: 15,
+        textAlign: 'center'
+    }
 });
 
 export default RegisterUser;

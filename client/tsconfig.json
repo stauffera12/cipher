@@ -2,6 +2,16 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-native",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "allowJs": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
     "paths": {
       "@/*": [
         "./*"
@@ -19,6 +29,8 @@
     "client/app/_layout.tsx",
     "client/components/login.js",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ]
+    "expo-env.d.ts",
+    "app/index.ts"
+  ],
+  "exclude": ["node_modules"]
 }

@@ -4,15 +4,15 @@ import { useSelector, useDispatch } from 'react-redux';
 import { checkAuthState } from '../store/actions/authActions';
 
 // Import screens
-import LoginScreen from '../../components/screens/LoginScreen';
-import HomeScreen from '../../components/screens/HomeScreen';
+import RegisterUser from '../../components/screens/CreateNewUserAuth/registerUser';
+import UserDetails from '../../components/screens/CreateNewUserAuth/userDetails';
 
 const Stack = createStackNavigator();
 
 // Stack navigator for authentication flows
 const AuthNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="RegisterUser" component={RegisterUser} />
     {/* Add other auth screens here if needed */}
   </Stack.Navigator>
 );
@@ -20,7 +20,7 @@ const AuthNavigator = () => (
 // Stack navigator for main app screens
 const MainNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Home" component={HomeScreen} />
+    <Stack.Screen name="UserDetails" component={UserDetails} />
     {/* Add other app screens here */}
   </Stack.Navigator>
 );

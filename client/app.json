@@ -1,33 +1,37 @@
 {
   "expo": {
-    "name": "my-app",
+    "name": "Cipher",
     "slug": "my-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/cipher.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryAddUsageDescription": "Application needs permission to prevent screenshots"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/video/cipher_vid_edit.mp4",
         "backgroundColor": "#ffffff"
       }
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/video/cipher_vid_edit.mp4"
     },
     "plugins": [
       "expo-router",
+      ["expo-camera"],
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/video/cipher_vid_edit.mp4",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

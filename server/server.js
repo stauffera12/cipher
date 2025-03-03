@@ -51,81 +51,10 @@ app.use(checkConnection);
 const routes = {
   '/users': './routes/userRoutes',
   '/posts': './routes/postRoutes',
-  '/auth': './routes/authenticationRoutes', // New authentication routes
+  '/auth': './routes/authenticationRoutes',
   '/stripe': './routes/stripeRoutes',
+  '/invite': './routes/inviteRout'
 };
-
-app.get('/invite', (req, res) => {
-  const { code } = req.query;
-  const userAgent = req.get('User-Agent');
-  
-  // Function to handle error redirects consistently
-  const handleErrorRedirect = (reason = 'unknown') => {
-    const errorDeepLink = `yourapp://invite/error?reason=${reason}`;
-    
-    // For Android users
-    if (/android/i.test(userAgent)) {
-      return res.redirect(`https://play.google.com/store/apps/details?id=com.yourapp.android&referrer=${encodeURIComponent(errorDeepLink)}`);
-    } 
-    // For iOS users
-    else if (/iPad|iPhone|iPod/.test(userAgent)) {
-      return res.redirect(`https://apps.apple.com/app/yourapp?id=yourapp-id&referrer=${encodeURIComponent(errorDeepLink)}`);
-    }
-    
-    // Default fallback for unsupported platforms - always use the error page
-    return res.redirect('https://yourwebsite.com/invite-error');
-  };
-
-  // Check if code is missing
-  if (!code) {
-    return handleErrorRedirect('missing_code');
-  }
-  
-  // Validate the invite code (replace this with your actual validation logic)
-  const isValidCode = validateInviteCode(code);
-  if (!isValidCode) {
-    return handleErrorRedirect('invalid_code');
-  }
-
-  // Check if code is expired (replace with your actual expiration check)
-  const isExpired = checkIfCodeExpired(code);
-  if (isExpired) {
-    return handleErrorRedirect('expired_code');
-  }
-
-  // Any other validation failures would go here
-  // if (otherValidationFailed) {
-  //   return handleErrorRedirect('other_reason');
-  // }
-
-  // Only if ALL validations pass, proceed with the normal flow
-  const deepLink = `yourapp://invite?code=${code}`;
-
-  // For Android users
-  if (/android/i.test(userAgent)) {
-    return res.redirect(`https://play.google.com/store/apps/details?id=com.yourapp.android&referrer=${encodeURIComponent(deepLink)}`);
-  } 
-  // For iOS users
-  else if (/iPad|iPhone|iPod/.test(userAgent)) {
-    return res.redirect(`https://apps.apple.com/app/yourapp?id=yourapp-id&referrer=${encodeURIComponent(deepLink)}`);
-  }
-
-  // Default redirect for unsupported platforms
-  // Even this is an error case, so redirect to error page
-  return handleErrorRedirect('unsupported_platform');
-});
-
-// Example validation functions (replace these with your actual implementations)
-function validateInviteCode(code) {
-  // Your code to validate the invite code
-  // For example: check if it exists in your database
-  return true; // Return true if valid, false otherwise
-}
-
-function checkIfCodeExpired(code) {
-  // Your code to check if the invite code is expired
-  return false; // Return true if expired, false otherwise
-}
 
 // Register routes
 Object.entries(routes).forEach(([path, routePath]) => {

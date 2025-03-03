@@ -25,7 +25,7 @@ export const checkAuthState = () => {
     try {
       // Check if user is already authenticated using AsyncStorage
       const isRegistered = await AsyncStorage.getItem('userRegistered');
-      
+
       if (isRegistered === 'true') {
         // We could fetch additional user data here from AsyncStorage if needed
         const userData = {

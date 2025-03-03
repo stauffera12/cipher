@@ -85,6 +85,7 @@ const InternalNavigator = () => (
 const AppNavigator = () => {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
   const dispatch = useDispatch();
+  console.log(isAuthenticated)
   
   useEffect(() => {
     dispatch(checkAuthState()); // Check auth state when app starts

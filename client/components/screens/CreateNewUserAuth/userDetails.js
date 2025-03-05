@@ -15,8 +15,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from "@react-navigation/native";
+import { loginSuccess } from '../../../app/store/actions/authActions';
+import IridescentButton from '../../ui/Button/iridescentButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { logoutUser } from '../../../app/store/actions/authActions';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 120;
@@ -24,6 +27,7 @@ const SWIPE_THRESHOLD = 120;
 const UserDetails = () => {
   const user = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
+  const navigation = useNavigation();
   
   // Animation and gesture references
   const pan = useRef(new Animated.ValueXY()).current;
@@ -35,11 +39,12 @@ const UserDetails = () => {
   
   // Form state
   const [avatar, setAvatar] = useState(null);
-  const [displayName, setDisplayName] = useState(user?.name || "");
+  const [displayName, setDisplayName] = useState("");
   const [realName, setRealName] = useState('');
   const [location, setLocation] = useState('');
   const [bio, setBio] = useState('');
   const [defaultAnonymity, setDefaultAnonymity] = useState(true);
+  const [defaultLocationVis, setDefaultLocationVis] = useState(false);
   const [interestAreas, setInterestAreas] = useState('');
   const [connectionGoals, setConnectionGoals] = useState('');
 
@@ -48,6 +53,22 @@ const UserDetails = () => {
 useEffect(() => {
   currentSectionRef.current = currentSection; // Sync ref with state
 }, [currentSection]);
+
+// Function to load displayName from AsyncStorage
+useEffect(() => {
+  const loadDisplayName = async () => {
+      try {
+          const storedName = await AsyncStorage.getItem('displayName');
+          if (storedName) {
+              setDisplayName(storedName); // Use stored value if available
+          }
+      } catch (error) {
+          console.error("Error loading displayName:", error);
+      }
+  };
+
+  loadDisplayName();
+}, []);
 
 const panResponder = useRef(
   PanResponder.create({
@@ -110,16 +131,36 @@ const fadeToNextSection = (direction) => {
     // Would open image picker here
   };
 
-  const handleSubmitProfile = async () => {
+  const handleBiometricAuth = async () => {
     try {
-      // Dispatch the logoutUser action to clear AsyncStorage and perform logout
-      dispatch(logoutUser());
-      console.log('User logged out successfully');
-      // Navigate to the login or home screen if needed (using navigation)
+        const biometricAuth = await LocalAuthentication.authenticateAsync({
+            promptMessage: "Authenticate to enter",
+            fallbackLabel: "Use passcode",
+            cancelLabel: "Cancel",
+            disableDeviceFallback: false,
+        });
+
+        if (biometricAuth.success) {
+            handleAuthSuccess();
+        }
     } catch (error) {
-      console.error('Error during logout:', error);
+        console.error("Biometric auth error:", error);
+        Alert.alert("Error", "Authentication failed. Try again.");
     }
-  };
+};
+
+const handleAuthSuccess = async () => {
+  try {
+    const user = { id: '1', name: displayName };
+    dispatch({ type: 'CREATE_USER_SUCCESS', payload: user });
+    console.log('User account setup complete');
+    
+    // Navigate to MainApp
+    navigation.navigate('MainApp', { screen: 'GlobalNetwork' });
+  } catch (error) {
+    console.error('Error during account completion:', error);
+  }
+};
 
   // Dot that shows current section and can be tapped to navigate
   const renderNavigationDots = () => {
@@ -232,9 +273,10 @@ const fadeToNextSection = (direction) => {
           <View style={styles.revealControl}>
             <Text style={styles.revealText}>Show exact location</Text>
             <Switch 
-              value={false} 
-              onValueChange={() => {}}
-              trackColor={{ false: '#333', true: '#007AFF' }}
+              value={defaultLocationVis} 
+              onValueChange={setDefaultLocationVis}
+              trackColor={{ false: '#333', true: '#6D3ACD' }}
+              thumbColor={defaultLocationVis ? '#B196EF' : '#DDDDDD'}
             />
           </View>
         </View>
@@ -247,24 +289,51 @@ const fadeToNextSection = (direction) => {
           <Switch 
             value={defaultAnonymity} 
             onValueChange={setDefaultAnonymity} 
-            trackColor={{ false: '#333', true: '#007AFF' }}
+            trackColor={{ false: '#333', true: '#6D3ACD' }}
+            thumbColor={defaultAnonymity ? '#B196EF' : '#DDDDDD'}
           />
         </View>
         
-        <View style={styles.revealOptions}>
-          <View style={styles.revealOption}>
-            <View style={styles.revealDot} />
-            <Text style={styles.revealOptionText}>Reveal name after 3 messages</Text>
+        {defaultAnonymity ? (
+          <View style={styles.revealOptions}>
+            <View style={styles.revealOption}>
+              <View style={styles.revealDot} />
+              <Text style={styles.revealOptionText}>Accept or block all incoming messages</Text>
+            </View>
+            <View style={styles.revealOption}>
+              <View style={styles.revealDot} />
+              <Text style={styles.revealOptionText}>Profile image visible only to direct connections</Text>
+            </View>
+            <View style={styles.revealOption}>
+              <View style={styles.revealDot} />
+              <Text style={styles.revealOptionText}>Posts shared exclusively with direct connections</Text>
+            </View>
+            <View style={styles.revealOption}>
+              <View style={styles.revealDot} />
+              <Text style={styles.revealOptionText}>Full identity disclosed to direct connections only</Text>
+            </View>
+            <View style={styles.revealOption}>
+              <View style={styles.revealDot} />
+              <Text style={styles.revealOptionText}>Only professional details shared with extended connections</Text>
+            </View>
+            <View style={styles.revealOption}>
+              <View style={styles.revealDot} />
+              <Text style={styles.revealOptionText}>Display name and location visible by default</Text>
+            </View>
+            <View style={styles.revealOption}>
+              <View style={styles.revealDot} />
+              <Text style={styles.revealOptionText}>Multi-factor trust scoring before full profile access</Text>
+            </View>
           </View>
-          <View style={styles.revealOption}>
-            <View style={styles.revealDot} />
-            <Text style={styles.revealOptionText}>Reveal photo with mutual connections</Text>
-          </View>
-          <View style={styles.revealOption}>
-            <View style={styles.revealDot} />
-            <Text style={styles.revealOptionText}>Full identity after verified trust</Text>
-          </View>
-        </View>
+        ) : (
+          <IridescentButton 
+            title="Custom Settings" 
+            colors={['#0b1f5e', '#2541b2', '#3a6bff', '#7678ed', '#b196ef', '#daa520', '#e0cfb1']}
+            onPress={() => {
+              navigation.navigate('CustomAnonymitySettings');
+            }}
+          />
+        )}
       </View>
     );
   };
@@ -313,13 +382,25 @@ const fadeToNextSection = (direction) => {
               <Text style={styles.tagText}>Art</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.tag}>
+              <Text style={styles.tagText}>Fitness</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.tag}>
+              <Text style={styles.tagText}>Fashion</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.tag}>
+              <Text style={styles.tagText}>Food</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.tag}>
+              <Text style={styles.tagText}>Music</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.tag}>
+              <Text style={styles.tagText}>Gaming</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.tag}>
+              <Text style={styles.tagText}>Travel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.tag}>
               <Text style={styles.tagText}>Business</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.tag}>
-              <Text style={styles.tagText}>Science</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.tag}>
-              <Text style={styles.tagText}>Design</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -337,7 +418,7 @@ const fadeToNextSection = (direction) => {
         
         <View style={styles.completionContainer}>
           <View style={styles.completionCircle}>
-            <Ionicons name="checkmark" size={40} color="#007AFF" />
+            <Ionicons name="checkmark" size={40} color="#6D3ACD" />
           </View>
           
           <Text style={styles.completionText}>
@@ -345,30 +426,46 @@ const fadeToNextSection = (direction) => {
           </Text>
           
           <View style={styles.completionDetail}>
-            <Ionicons name="shield-outline" size={18} color="#999" />
+            <Ionicons name="shield-outline" size={18} color="#6D3ACD" />
             <Text style={styles.completionDetailText}>Protected identity with custom revelation rules</Text>
           </View>
           
           <View style={styles.completionDetail}>
-            <Ionicons name="people-outline" size={18} color="#999" />
+            <Ionicons name="people-outline" size={18} color="#6D3ACD" />
             <Text style={styles.completionDetailText}>Connection to your inviter's network</Text>
           </View>
           
           <View style={styles.completionDetail}>
-            <Ionicons name="key-outline" size={18} color="#999" />
+            <Ionicons name="key-outline" size={18} color="#6D3ACD" />
             <Text style={styles.completionDetailText}>Access to exclusive network content</Text>
           </View>
           
-          <TouchableOpacity 
-            style={styles.submitButton}
-            onPress={handleSubmitProfile}
-          >
-            <Text style={styles.submitText}>Create My Cipher Identity</Text>
-          </TouchableOpacity>
+          <View style={{ marginTop: 10 }}>
+            <IridescentButton 
+              title="Create My Cipher Identity" 
+              colors={['#0b1f5e', '#2541b2', '#3a6bff', '#7678ed', '#b196ef', '#daa520', '#e0cfb1']}
+              onPress={handleBiometricAuth}
+            />
+           </View>
           
-          <Text style={styles.privacyNote}>
-            By creating your profile, you agree to our Terms and Privacy Policy
-          </Text>
+          <View>
+            <Text style={styles.privacyNote}>
+              By creating your profile, you agree to our{" "}
+              <Text
+                style={styles.link}
+                onPress={() => navigation.navigate("TermsConditions")}
+              >
+                Terms
+              </Text>{" "}
+              and{" "}
+              <Text
+                style={styles.link}
+                onPress={() => navigation.navigate("PrivacyPolicy")}
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -480,7 +577,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6D3ACD',
   },
   pulsingRing: {
     position: 'absolute',
@@ -488,7 +585,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#B196EF',
     opacity: 0.5,
     top: 3,
     left: 13,
@@ -576,6 +673,7 @@ const styles = StyleSheet.create({
   switchLabel: {
     color: 'white',
     fontSize: 16,
+    width: 150
   },
   switchDescription: {
     color: '#999',
@@ -585,16 +683,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    paddingHorizontal: 10
   },
   revealText: {
     color: '#999',
     fontSize: 14,
+    width: 150
   },
   revealOptions: {
     backgroundColor: '#252525',
     borderRadius: 8,
     padding: 16,
+    paddingBottom: 4
   },
   revealOption: {
     flexDirection: 'row',
@@ -605,7 +705,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6D3ACD',
     marginRight: 8,
   },
   revealOptionText: {
@@ -626,17 +726,19 @@ const styles = StyleSheet.create({
   },
   tag: {
     backgroundColor: '#252525',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
     marginRight: 8,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#444',
+    width: '28%',
   },
   tagText: {
     color: 'white',
     fontSize: 14,
+    textAlign: 'center',
   },
   completionContainer: {
     alignItems: 'center',
@@ -646,7 +748,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(0, 122, 255, 0.2)',
+    backgroundColor: '#B196EF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -699,6 +801,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     width: 150
   },
+  link: {
+    color: "#E0CFB1",
+    textDecorationLine: "underline",
+  }
 });
 
 export default UserDetails;

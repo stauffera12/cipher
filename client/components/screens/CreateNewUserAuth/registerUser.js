@@ -1,66 +1,46 @@
 import { useState, useEffect, useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as LocalAuthentication from 'expo-local-authentication';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useDispatch } from 'react-redux';
-import { loginSuccess } from '../../../app/store/actions/authActions';
 import { Video } from 'expo-av';
 import IridescentButton from '../../ui/Button/iridescentButton';
 import CustomAlert from '../../ui/Alert/registerAlerts';
+import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const RegisterUser = ({ navigation }) => {
+const RegisterUser = ({}) => {
     const [passcode, setPasscode] = useState("");
     const [isPasscodeCorrect, setIsPasscodeCorrect] = useState(false);
     const [isAccepted, setIsAccepted] = useState(false);
-    const [username, setUsername] = useState("");
+    const [displayName, setDisplayName] = useState("");
     const [showEnterButton, setShowEnterButton] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
-    const dispatch = useDispatch();
     const videoRef = useRef(null);
+    const navigation = useNavigation();
 
     const correctPasscode = "#Cipher101";
 
     useEffect(() => {
-        StatusBar.setHidden(true);
         
         if (videoRef.current) {
           videoRef.current.playAsync();
         }
         
         return () => {
-          StatusBar.setHidden(false);
         };
       }, []);
 
-    const handleUsernameChange = (text) => {
-        setUsername(text);
+      
+
+      const handleDisplayNameChange = async (text) => { 
+        setDisplayName(text); 
         setShowEnterButton(text.trim().length > 0);
-    };
-
-    const handleBiometricAuth = async () => {
+    
         try {
-            const biometricAuth = await LocalAuthentication.authenticateAsync({
-                promptMessage: "Authenticate to enter",
-                fallbackLabel: "Use passcode",
-                cancelLabel: "Cancel",
-                disableDeviceFallback: false,
-            });
-
-            if (biometricAuth.success) {
-                handleAuthSuccess();
-            }
+            await AsyncStorage.setItem('displayName', text); // Store in local storage
         } catch (error) {
-            console.error("Biometric auth error:", error);
-            Alert.alert("Error", "Authentication failed. Try again.");
+            console.error("Error saving displayName:", error);
         }
-    };
-
-    const handleAuthSuccess = () => {
-        const user = { id: '1', name: username };
-        AsyncStorage.setItem('userRegistered', 'true');
-        dispatch(loginSuccess(user));
     };
 
     const handleUnlockAccess = () => {
@@ -119,15 +99,17 @@ const RegisterUser = ({ navigation }) => {
                             style={styles.input}
                             placeholder="Alias"
                             placeholderTextColor="white"
-                            value={username}
-                            onChangeText={handleUsernameChange}
+                            value={displayName}
+                            onChangeText={handleDisplayNameChange}
                         />
-                        {username.length > 0 && (
-                            <TouchableOpacity onPress={handleBiometricAuth}>
+                        {displayName.length > 0 && (
+                            <TouchableOpacity>
                                 <IridescentButton 
                                     title="Enter the Cipher" 
                                     colors={['#0b1f5e', '#2541b2', '#3a6bff', '#7678ed', '#b196ef', '#daa520', '#e0cfb1']}
-                                    onPress={handleBiometricAuth}
+                                    onPress={() => {
+                                        navigation.navigate('UserDetails');
+                                      }}
                                 />
                             </TouchableOpacity>
                         )}

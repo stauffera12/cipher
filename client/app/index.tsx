@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
 import * as ScreenCapture from 'expo-screen-capture';
-import store from './store/store';
+import store, { persistor } from './store/store';
+import { PersistGate } from 'redux-persist/integration/react';
 import AppNavigator from './navigation/AppNavigator';
+import { StatusBar } from 'expo-status-bar';
+import { View, StyleSheet } from 'react-native';
 
 export default function App() {
   useEffect(() => {
@@ -26,10 +28,22 @@ export default function App() {
 
   return (
     <Provider store={store}>
-      <SafeAreaProvider>
-        {/* ✅ No need to wrap NavigationContainer here since AppNavigator should handle it */}
-        <AppNavigator />
-      </SafeAreaProvider>
+      <PersistGate loading={null} persistor={persistor}>
+        <SafeAreaProvider>
+          <View style={styles.container}>
+            {/* Using translucent status bar with light content */}
+            <StatusBar translucent backgroundColor='black'/>
+            <AppNavigator />
+          </View>
+        </SafeAreaProvider>
+      </PersistGate>
     </Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'black', // Your black background
+  },
+});

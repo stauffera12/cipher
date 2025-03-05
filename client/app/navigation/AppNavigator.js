@@ -1,20 +1,26 @@
 import React, { useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useSelector, useDispatch } from 'react-redux';
-import { checkAuthState } from '../store/actions/authActions';
 import * as Linking from 'expo-linking';
 import { useNavigation } from '@react-navigation/native';
 
 // Import screens
 import RegisterUser from '../../components/screens/CreateNewUserAuth/registerUser';
 import UserDetails from '../../components/screens/CreateNewUserAuth/userDetails';
-import InviteError from '../../components/screens/CreateNewUserAuth/inviteError'; // Import your error screen
+import InviteError from '../../components/screens/CreateNewUserAuth/inviteError';
+import TermsConditions from '../../components/screens/OtherPages/terms_conditions';
+import PrivacyPolicy from '../../components/screens/OtherPages/privacy_policy';
+import CustomAnonymitySettings from '../../components/screens/CreateNewUserAuth/customAnonymity';
+import GlobalNetwork from '../../components/screens/UserProfile/globalNetworkPage';
+import Profile from '../../components/screens/UserProfile/profilePage';
+import LoginPage from '../../components/screens/ExistingUserAuth/loginPage';
 
 const Stack = createStackNavigator();
 
 // Deep link handler inside AppNavigator
 const DeepLinkHandler = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const handleDeepLink = (event) => {
@@ -25,11 +31,12 @@ const DeepLinkHandler = () => {
         // Handle normal invite with code
         if (queryParams?.code) {
           console.log('Deep link activated with invite code:', queryParams.code);
+          // Set isNewUser to true when invite code is detected
+          dispatch({ type: 'SET_NEW_USER', payload: true });
           navigation.navigate('RegisterUser', { inviteCode: queryParams.code });
         } 
         // Handle invite error cases
         else if (path === 'invite/error') {
-          // Extract error reason if available
           const reason = queryParams?.reason || 'unknown';
           console.log('Deep link error with reason:', reason);
           navigation.navigate('InviteError', { reason });
@@ -47,19 +54,32 @@ const DeepLinkHandler = () => {
 
     // Handle deep link if app was opened from an invite link (cold start)
     Linking.getInitialURL().then((url) => {
-      if (url) handleDeepLink({ url });
+      if (url) {
+        handleDeepLink({ url });
+      } else {
+        // If no deep link, ensure isNewUser is false
+        dispatch({ type: 'SET_NEW_USER', payload: false });
+      }
     });
 
     return () => {
       subscription.remove(); // Proper cleanup
     };
-  }, [navigation]);
+  }, [navigation, dispatch]);
 
-  return null; // This component does not render anything
+  return null;
 };
 
+const MainAppNavigator = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="GlobalNetwork" component={GlobalNetwork} />
+    <Stack.Screen name="Profile" component={Profile} />
+    {/* Other tabs */}
+  </Stack.Navigator>
+);
+
 // Stack navigator for authentication flows
-const AuthNavigator = () => (
+const NewUserNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="RegisterUser" component={RegisterUser} />
     <Stack.Screen 
@@ -71,30 +91,44 @@ const AuthNavigator = () => (
       animationEnabled: true   // Keep animations for better UX
     }}
   />
+    <Stack.Screen name="UserDetails" component={UserDetails} />
+    <Stack.Screen name="CustomAnonymitySettings" component={CustomAnonymitySettings} />
+    <Stack.Screen name="TermsConditions" component={TermsConditions} />
+    <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
+    <Stack.Screen name="MainApp" component={MainAppNavigator} />
   </Stack.Navigator>
 );
 
-// Stack navigator for main app screens
-const InternalNavigator = () => (
+const ExistingUserNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="UserDetails" component={UserDetails} />
+    <Stack.Screen name="Login" component={LoginPage} />
+    <Stack.Screen name="GlobalNetwork" component={GlobalNetwork} />
+    <Stack.Screen name="Profile" component={Profile} />
+      {/* Other tabs */}
   </Stack.Navigator>
-);
+)
 
 // Root navigator that decides between auth and main flows
 const AppNavigator = () => {
-  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const { isNewUser } = useSelector(state => state.auth);
   const dispatch = useDispatch();
-  console.log(isAuthenticated)
   
+  // Initial app start - set isNewUser to false by default
   useEffect(() => {
-    dispatch(checkAuthState()); // Check auth state when app starts
-  }, [dispatch]);
+    // Only set on initial app load
+    console.log(isNewUser);
+  }, [isNewUser]);
 
   return (
     <>
       <DeepLinkHandler />
-      {isAuthenticated ? <InternalNavigator /> : <AuthNavigator />}
+      {isNewUser === true || isNewUser === false ? (
+        <NewUserNavigator />
+      ) : isNewUser === null ? (
+        <ExistingUserNavigator />
+      ) : (
+        <InviteError />
+      )}
     </>
   );
 };

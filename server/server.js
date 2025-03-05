@@ -53,7 +53,7 @@ const routes = {
   '/posts': './routes/postRoutes',
   '/auth': './routes/authenticationRoutes',
   '/stripe': './routes/stripeRoutes',
-  '/invite': './routes/inviteRout'
+  '/invite': './routes/inviteRoute'
 };
 
 // Register routes
